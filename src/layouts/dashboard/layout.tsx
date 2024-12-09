@@ -1,6 +1,6 @@
 import type { Theme, SxProps, Breakpoint } from '@mui/material/styles';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
@@ -38,6 +38,14 @@ export function DashboardLayout({ sx, children, header }: DashboardLayoutProps) 
 
   const [navOpen, setNavOpen] = useState(false);
 
+  useEffect(() => {
+    // localStorage.setItem('token', 'fake-token');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      window.location.href = '/sign-in';
+    }
+  }, []);
+
   const layoutQuery: Breakpoint = 'lg';
 
   return (
@@ -61,23 +69,7 @@ export function DashboardLayout({ sx, children, header }: DashboardLayoutProps) 
                 This is an info Alert.
               </Alert>
             ),
-            leftArea: (
-              <>
-                <MenuButton
-                  onClick={() => setNavOpen(true)}
-                  sx={{
-                    ml: -1,
-                    [theme.breakpoints.up(layoutQuery)]: { display: 'none' },
-                  }}
-                />
-                <NavMobile
-                  data={navData}
-                  open={navOpen}
-                  onClose={() => setNavOpen(false)}
-                  workspaces={_workspaces}
-                />
-              </>
-            ),
+
             rightArea: (
               <Box gap={1} display="flex" alignItems="center">
                 <Searchbar />

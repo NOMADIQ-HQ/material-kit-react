@@ -12,6 +12,8 @@ import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { UserType } from 'src/utils/types';
+import { formatDate } from 'src/utils';
 
 // ----------------------------------------------------------------------
 
@@ -26,7 +28,7 @@ export type UserProps = {
 };
 
 type UserTableRowProps = {
-  row: UserProps;
+  row: UserType;
   selected: boolean;
   onSelectRow: () => void;
 };
@@ -51,26 +53,18 @@ export function UserTableRow({ row, selected, onSelectRow }: UserTableRowProps) 
 
         <TableCell component="th" scope="row">
           <Box gap={2} display="flex" alignItems="center">
-            <Avatar alt={row.name} src={row.avatarUrl} />
-            {row.name}
+            <Avatar alt={row.firstName} />
+            {row.firstName} {row.lastName}
           </Box>
         </TableCell>
 
-        <TableCell>{row.company}</TableCell>
+        <TableCell>{row.email}</TableCell>
 
-        <TableCell>{row.role}</TableCell>
-
-        <TableCell align="center">
-          {row.isVerified ? (
-            <Iconify width={22} icon="solar:check-circle-bold" sx={{ color: 'success.main' }} />
-          ) : (
-            '-'
-          )}
-        </TableCell>
-
-        <TableCell>
-          <Label color={(row.status === 'banned' && 'error') || 'success'}>{row.status}</Label>
-        </TableCell>
+        <TableCell>{row.phoneNumber}</TableCell>
+        <TableCell>{row.status}</TableCell>
+        <TableCell>{formatDate(row.leaseStartDate)}</TableCell>
+        <TableCell>{formatDate(row.leaseEndDate)}</TableCell>
+        <TableCell>{row.buildingID.name}</TableCell>
 
         <TableCell align="right">
           <IconButton onClick={handleOpenPopover}>

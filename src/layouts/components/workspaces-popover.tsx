@@ -68,6 +68,7 @@ export function WorkspacesPopover({ data = [], sx, ...other }: WorkspacesPopover
           textAlign: 'left',
           justifyContent: 'flex-start',
           bgcolor: (theme) => varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
+          visibility: 'hidden',
           ...sx,
         }}
         {...other}

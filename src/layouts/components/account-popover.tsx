@@ -1,6 +1,6 @@
 import type { IconButtonProps } from '@mui/material/IconButton';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -15,6 +15,7 @@ import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 import { useRouter, usePathname } from 'src/routes/hooks';
 
 import { _myAccount } from 'src/_mock';
+import { UserType } from 'src/utils/types';
 
 // ----------------------------------------------------------------------
 
@@ -34,6 +35,8 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
 
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
 
+  const [userObj, setUserObj] = useState<UserType>();
+
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setOpenPopover(event.currentTarget);
   }, []);
@@ -50,6 +53,15 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
     [handleClosePopover, router]
   );
 
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    if (user) {
+      const getUser = JSON.parse(user);
+      console.log('GET USER', getUser);
+      setUserObj(getUser);
+    }
+  }, []);
+
   return (
     <>
       <IconButton
@@ -65,7 +77,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         {...other}
       >
         <Avatar src={_myAccount.photoURL} alt={_myAccount.displayName} sx={{ width: 1, height: 1 }}>
-          {_myAccount.displayName.charAt(0).toUpperCase()}
+          {userObj?.firstName.charAt(0).toUpperCase() ?? ''}
         </Avatar>
       </IconButton>
 
@@ -83,11 +95,11 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
       >
         <Box sx={{ p: 2, pb: 1.5 }}>
           <Typography variant="subtitle2" noWrap>
-            {_myAccount?.displayName}
+            {userObj?.firstName ?? ''}
           </Typography>
 
           <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
-            {_myAccount?.email}
+            {userObj?.email ?? ''}
           </Typography>
         </Box>
 
@@ -129,7 +141,18 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         <Divider sx={{ borderStyle: 'dashed' }} />
 
         <Box sx={{ p: 1 }}>
-          <Button fullWidth color="error" size="medium" variant="text">
+          <Button
+            fullWidth
+            color="error"
+            size="medium"
+            variant="text"
+            onClick={() => {
+              localStorage.removeItem('token');
+              localStorage.removeItem('refreshToken');
+              localStorage.removeItem('user');
+              router.push('/sign-in');
+            }}
+          >
             Logout
           </Button>
         </Box>

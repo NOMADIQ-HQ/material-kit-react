@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-
+import { useState, useCallback, useEffect } from 'react';
+import axios from 'axios';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
@@ -15,14 +15,15 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { UserType } from 'src/utils/types';
+
 import { TableNoData } from '../table-no-data';
 import { UserTableRow } from '../user-table-row';
 import { UserTableHead } from '../user-table-head';
 import { TableEmptyRows } from '../table-empty-rows';
 import { UserTableToolbar } from '../user-table-toolbar';
 import { emptyRows, applyFilter, getComparator } from '../utils';
-
-import type { UserProps } from '../user-table-row';
+import { Stack } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
@@ -31,13 +32,30 @@ export function UserView() {
 
   const [filterName, setFilterName] = useState('');
 
-  const dataFiltered: UserProps[] = applyFilter({
-    inputData: _users,
-    comparator: getComparator(table.order, table.orderBy),
-    filterName,
-  });
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [file, setFile] = useState<File | null>(null);
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.data) {
+        // Assuming the response data is an array of users
+        console.log('response.data', response.data.data);
+        setUsers(response.data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  };
 
-  const notFound = !dataFiltered.length && !!filterName;
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+  const notFound = !users.length && !!filterName;
 
   return (
     <DashboardContent>
@@ -45,13 +63,54 @@ export function UserView() {
         <Typography variant="h4" flexGrow={1}>
           Users
         </Typography>
-        <Button
-          variant="contained"
-          color="inherit"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-        >
-          New user
-        </Button>
+        <Stack direction="column" spacing={2}>
+          <Button
+            variant="contained"
+            color="inherit"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.csv';
+              input.onchange = (event) => {
+                const file = (event.target as HTMLInputElement).files?.[0];
+                if (file) {
+                  // Handle the file upload
+                  console.log('Selected file:', file);
+                  setFile(file);
+                  const formData = new FormData();
+                  formData.append('file', file);
+
+                  const token = localStorage.getItem('token');
+
+                  axios
+                    .post(`${import.meta.env.VITE_BACKEND_URL}/users/bulk`, formData, {
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data',
+                      },
+                    })
+                    .then((response) => {
+                      if (response.data.data.buildingCreated.name) {
+                        fetchUsers();
+                      }
+                    })
+                    .catch((error) => {
+                      console.error('Failed to upload file:', error);
+                    });
+                }
+              };
+              input.click();
+            }}
+          >
+            New user through CSV
+          </Button>
+          {file && (
+            <Typography variant="body2" sx={{ ml: 2 }}>
+              {file.name}
+            </Typography>
+          )}
+        </Stack>
       </Box>
 
       <Card>
@@ -81,27 +140,23 @@ export function UserView() {
                 }
                 headLabel={[
                   { id: 'name', label: 'Name' },
-                  { id: 'company', label: 'Company' },
-                  { id: 'role', label: 'Role' },
-                  { id: 'isVerified', label: 'Verified', align: 'center' },
-                  { id: 'status', label: 'Status' },
-                  { id: '' },
+                  { id: 'email', label: 'Email' },
+                  { id: 'phoneNumber', label: 'Phone Number' },
+                  { id: 'status', label: 'Status', align: 'center' },
+                  { id: 'leaseStartDate', label: 'Lease Start Date' },
+                  { id: 'leaseEndDate', label: 'Lease End Date' },
+                  { id: 'buildingID', label: 'Building Name' },
                 ]}
               />
               <TableBody>
-                {dataFiltered
-                  .slice(
-                    table.page * table.rowsPerPage,
-                    table.page * table.rowsPerPage + table.rowsPerPage
-                  )
-                  .map((row) => (
-                    <UserTableRow
-                      key={row.id}
-                      row={row}
-                      selected={table.selected.includes(row.id)}
-                      onSelectRow={() => table.onSelectRow(row.id)}
-                    />
-                  ))}
+                {users?.map((row: UserType) => (
+                  <UserTableRow
+                    key={row._id}
+                    row={row}
+                    selected={table.selected.includes(row._id)}
+                    onSelectRow={() => table.onSelectRow(row._id)}
+                  />
+                ))}
 
                 <TableEmptyRows
                   height={68}
