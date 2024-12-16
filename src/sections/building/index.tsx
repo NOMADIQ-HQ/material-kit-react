@@ -8,43 +8,43 @@ import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
-import { Stack } from '@mui/material';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
-import { UserType } from 'src/utils/types';
+import { Building, Buildings, UserType } from 'src/utils/types';
 
-import { TableNoData } from '../table-no-data';
-import { UserTableRow } from '../user-table-row';
-import { UserTableHead } from '../user-table-head';
-import { TableEmptyRows } from '../table-empty-rows';
-import { UserTableToolbar } from '../user-table-toolbar';
-import { emptyRows, applyFilter, getComparator } from '../utils';
+import { Stack } from '@mui/material';
+import { UserTableToolbar } from '../user/user-table-toolbar';
+import { UserTableHead } from '../user/user-table-head';
+import { UserTableRow } from '../user/user-table-row';
+import { TableEmptyRows } from '../user/table-empty-rows';
+import { TableNoData } from '../user/table-no-data';
+import { emptyRows } from '../user/utils';
+import { BuildingTableRow } from './buildingRow';
 
 // ----------------------------------------------------------------------
 
-export function UserView() {
+export function BuildingView() {
   const table = useTable();
 
   const [filterName, setFilterName] = useState('');
 
-  const [users, setUsers] = useState<UserType[]>([]);
-  const [file, setFile] = useState<File | null>(null);
+  const [buildings, setBuildings] = useState<Buildings>([]);
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users`, {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/buildings`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       if (response.data) {
         // Assuming the response data is an array of users
-        console.log('response.data', response.data.data);
-        setUsers(response.data.data);
+        console.log('response.data', response.data);
+        setBuildings(response.data);
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);
@@ -54,62 +54,14 @@ export function UserView() {
   useEffect(() => {
     fetchUsers();
   }, []);
-  const notFound = !users.length && !!filterName;
+  const notFound = !buildings?.length && !!filterName;
 
   return (
     <DashboardContent>
       <Box display="flex" alignItems="center" mb={5}>
         <Typography variant="h4" flexGrow={1}>
-          Users
+          Building
         </Typography>
-        <Stack direction="column" spacing={2}>
-          <Button
-            variant="contained"
-            color="inherit"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = '.csv';
-              input.onchange = (event) => {
-                const newFile = (event.target as HTMLInputElement).files?.[0];
-                if (newFile) {
-                  // Handle the file upload
-                  console.log('Selected file:', newFile);
-                  setFile(newFile);
-                  const formData = new FormData();
-                  formData.append('file', newFile);
-
-                  const token = localStorage.getItem('token');
-
-                  axios
-                    .post(`${import.meta.env.VITE_BACKEND_URL}/users/bulk`, formData, {
-                      headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data',
-                      },
-                    })
-                    .then((response) => {
-                      if (response.data.data.buildingCreated.name) {
-                        fetchUsers();
-                      }
-                    })
-                    .catch((error) => {
-                      console.error('Failed to upload file:', error);
-                    });
-                }
-              };
-              input.click();
-            }}
-          >
-            New user through CSV
-          </Button>
-          {file && (
-            <Typography variant="body2" sx={{ ml: 2 }}>
-              {file.name}
-            </Typography>
-          )}
-        </Stack>
       </Box>
 
       <Card>
@@ -128,28 +80,26 @@ export function UserView() {
               <UserTableHead
                 order={table.order}
                 orderBy={table.orderBy}
-                rowCount={users.length}
+                rowCount={buildings?.length}
                 numSelected={table.selected.length}
                 onSort={table.onSort}
                 onSelectAllRows={(checked) =>
                   table.onSelectAllRows(
                     checked,
-                    users.map((userObj) => userObj._id)
+                    buildings?.map((buildingObj) => buildingObj._id)
                   )
                 }
                 headLabel={[
                   { id: 'name', label: 'Name' },
-                  { id: 'email', label: 'Email' },
-                  { id: 'phoneNumber', label: 'Phone Number' },
-                  { id: 'status', label: 'Status', align: 'center' },
-                  { id: 'leaseStartDate', label: 'Lease Start Date' },
-                  { id: 'leaseEndDate', label: 'Lease End Date' },
-                  { id: 'buildingID', label: 'Building Name' },
+                  { id: 'address', label: 'Address' },
+                  { id: 'emergencyInfo', label: 'Emergency Info' },
+                  { id: 'createdAt', label: 'Created At' },
+                  { id: 'updatedAt', label: 'Updated At' },
                 ]}
               />
               <TableBody>
-                {users?.map((row: UserType) => (
-                  <UserTableRow
+                {buildings?.map((row: Building) => (
+                  <BuildingTableRow
                     key={row._id}
                     row={row}
                     selected={table.selected.includes(row._id)}
@@ -159,7 +109,7 @@ export function UserView() {
 
                 <TableEmptyRows
                   height={68}
-                  emptyRows={emptyRows(table.page, table.rowsPerPage, users.length)}
+                  emptyRows={emptyRows(table.page, table.rowsPerPage, buildings?.length)}
                 />
 
                 {notFound && <TableNoData searchQuery={filterName} />}
@@ -171,7 +121,7 @@ export function UserView() {
         <TablePagination
           component="div"
           page={table.page}
-          count={users.length}
+          count={buildings?.length}
           rowsPerPage={table.rowsPerPage}
           onPageChange={table.onChangePage}
           rowsPerPageOptions={[5, 10, 25]}

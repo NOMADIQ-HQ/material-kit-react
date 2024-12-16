@@ -18,4 +18,9 @@ export const navData = [
     path: '/home/user',
     icon: icon('ic-user'),
   },
+  {
+    title: 'Building',
+    path: '/home/building',
+    icon: icon('ic-notification'),
+  },
 ];
